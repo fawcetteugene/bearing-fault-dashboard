@@ -5,17 +5,16 @@ Import this module everywhere else — nothing is hardcoded.
 """
 
 import os
+import torch
+
+# ----------------------------------------------------------------------
+# Project root – always computed from the location of this file
+# This works both locally and on Streamlit Cloud (where the repo root is
+# the working directory, but __file__ is inside src/).
+# ----------------------------------------------------------------------
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Directories
-# Resolve project root: prefer cwd when it looks like the repo (Streamlit Cloud
-# sets cwd to the repo root); fall back to __file__-relative path for local use.
-def _repo_root() -> str:
-    cwd = os.getcwd()
-    if os.path.isdir(os.path.join(cwd, "models")) and os.path.isdir(os.path.join(cwd, "src")):
-        return cwd
-    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-BASE_DIR = _repo_root()
 DATA_DIR    = os.path.join(BASE_DIR, "data")
 MODEL_DIR   = os.path.join(BASE_DIR, "models")
 OUTPUT_DIR  = os.path.join(BASE_DIR, "outputs")
@@ -91,8 +90,7 @@ AUG_TARGET  = 100_000
 AUG_SIGMA   = 0.005
 
 # Device — auto-detect GPU
-import torch as _torch
-DEVICE = "cuda" if _torch.cuda.is_available() else "cpu"
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 # Baseline model hyperparameters (tuned via RandomizedSearchCV)
