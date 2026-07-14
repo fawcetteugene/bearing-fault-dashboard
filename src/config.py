@@ -7,7 +7,15 @@ Import this module everywhere else — nothing is hardcoded.
 import os
 
 # Directories
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Resolve project root: prefer cwd when it looks like the repo (Streamlit Cloud
+# sets cwd to the repo root); fall back to __file__-relative path for local use.
+def _repo_root() -> str:
+    cwd = os.getcwd()
+    if os.path.isdir(os.path.join(cwd, "models")) and os.path.isdir(os.path.join(cwd, "src")):
+        return cwd
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+BASE_DIR = _repo_root()
 DATA_DIR    = os.path.join(BASE_DIR, "data")
 MODEL_DIR   = os.path.join(BASE_DIR, "models")
 OUTPUT_DIR  = os.path.join(BASE_DIR, "outputs")

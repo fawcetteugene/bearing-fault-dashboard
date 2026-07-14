@@ -10,9 +10,13 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..")) if "__file__" in dir() else os.getcwd()
-if ROOT not in sys.path:
-    sys.path.insert(0, ROOT)
+_here = os.path.dirname(os.path.abspath(__file__)) if "__file__" in dir() else os.getcwd()
+_root = os.path.dirname(_here)
+# On Streamlit Cloud cwd is the repo root — prefer it
+if os.path.isdir(os.path.join(os.getcwd(), "src")):
+    _root = os.getcwd()
+if _root not in sys.path:
+    sys.path.insert(0, _root)
 
 from src.artifacts import build_artifact_registry, load_artifact_registry, load_preprocessing_manifest
 from src.config import CLASS_NAMES, ORIGINAL_FEATURES, OUTPUT_DIR

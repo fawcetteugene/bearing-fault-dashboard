@@ -108,8 +108,15 @@ def _normalize_state_dict(state_dict: dict[str, Any]) -> dict[str, Any]:
 
 
 def _repo_root() -> str:
-    """Always returns the project root regardless of where the process is launched."""
-    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    """Return the project root reliably on both local and Streamlit Cloud."""
+    # __file__ is src/artifacts.py → go up two levels
+    file_based = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    # On Streamlit Cloud cwd is the repo root; prefer it when it contains our
+    # known structure so stale absolute paths from a different machine don't win.
+    cwd = os.getcwd()
+    if os.path.isdir(os.path.join(cwd, "models")) and os.path.isdir(os.path.join(cwd, "src")):
+        return cwd
+    return file_based
 
 
 def _rel(path: str) -> str:
