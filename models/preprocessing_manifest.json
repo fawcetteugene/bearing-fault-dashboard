@@ -1,0 +1,84 @@
+{
+  "source_csv": "/home/fawcett/Desktop/bearing_fault_project/data/featuretime48k2048load_1.csv",
+  "created_at_utc": "2026-07-10T11:25:27.837903+00:00",
+  "seed": 42,
+  "raw_rows": 2300,
+  "original_feature_count": 9,
+  "engineered_feature_count": 10,
+  "fft_feature_count": 6,
+  "total_feature_count": 25,
+  "split_sizes_after_cleaning": {
+    "train": 1528,
+    "validation": 321,
+    "test": 329
+  },
+  "augmentation": {
+    "target_rows": 100000,
+    "sigma": 0.005,
+    "smote_k": 5,
+    "final_train_rows": 100000
+  },
+  "class_names": [
+    "Ball_007_1",
+    "Ball_014_1",
+    "Ball_021_1",
+    "IR_007_1",
+    "IR_014_1",
+    "IR_021_1",
+    "Normal_1",
+    "OR_007_6_1",
+    "OR_014_6_1",
+    "OR_021_6_1"
+  ],
+  "class_to_index": {
+    "Ball_007_1": 0,
+    "Ball_014_1": 1,
+    "Ball_021_1": 2,
+    "IR_007_1": 3,
+    "IR_014_1": 4,
+    "IR_021_1": 5,
+    "Normal_1": 6,
+    "OR_007_6_1": 7,
+    "OR_014_6_1": 8,
+    "OR_021_6_1": 9
+  },
+  "feature_order": [
+    "max",
+    "min",
+    "mean",
+    "sd",
+    "rms",
+    "skewness",
+    "kurtosis",
+    "crest",
+    "form",
+    "peak_to_peak",
+    "rms_mean_ratio",
+    "crest_form_ratio",
+    "kurtosis_squared",
+    "skewness_abs",
+    "rms_sd_ratio",
+    "max_min_ratio",
+    "kurtosis_crest",
+    "mean_squared",
+    "rms_squared",
+    "energy",
+    "spectral_entropy",
+    "impulse_factor",
+    "margin_factor",
+    "shape_factor",
+    "clearance_factor"
+  ],
+  "files": {
+    "train": "/home/fawcett/Desktop/bearing_fault_project/data/preprocessed_augmented_dataset_scaled.csv",
+    "validation": "/home/fawcett/Desktop/bearing_fault_project/data/validation_set_scaled.csv",
+    "test": "/home/fawcett/Desktop/bearing_fault_project/data/test_set_scaled.csv",
+    "scaler": "/home/fawcett/Desktop/bearing_fault_project/models/feature_scaler.pkl",
+    "encoder": "/home/fawcett/Desktop/bearing_fault_project/models/label_encoder.pkl"
+  },
+  "outlier_detector": {
+    "type": "IsolationForest",
+    "contamination": 0.05,
+    "random_state": 42
+  }
+}

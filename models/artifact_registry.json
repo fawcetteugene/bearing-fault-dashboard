@@ -1,0 +1,144 @@
+{
+  "created_at_utc": "2026-07-14T06:21:56.041790+00:00",
+  "seed": 42,
+  "feature_order": [
+    "max",
+    "min",
+    "mean",
+    "sd",
+    "rms",
+    "skewness",
+    "kurtosis",
+    "crest",
+    "form",
+    "peak_to_peak",
+    "rms_mean_ratio",
+    "crest_form_ratio",
+    "kurtosis_squared",
+    "skewness_abs",
+    "rms_sd_ratio",
+    "max_min_ratio",
+    "kurtosis_crest",
+    "mean_squared",
+    "rms_squared",
+    "energy",
+    "spectral_entropy",
+    "impulse_factor",
+    "margin_factor",
+    "shape_factor",
+    "clearance_factor"
+  ],
+  "target_classes": [
+    "Ball_007_1",
+    "Ball_014_1",
+    "Ball_021_1",
+    "IR_007_1",
+    "IR_014_1",
+    "IR_021_1",
+    "Normal_1",
+    "OR_007_6_1",
+    "OR_014_6_1",
+    "OR_021_6_1"
+  ],
+  "scaler_path": "/home/fawcett/Desktop/bearing_fault_project/models/feature_scaler.pkl",
+  "encoder_path": "/home/fawcett/Desktop/bearing_fault_project/models/label_encoder.pkl",
+  "preprocessing_manifest_path": "/home/fawcett/Desktop/bearing_fault_project/models/preprocessing_manifest.json",
+  "candidates": [
+    {
+      "name": "rf",
+      "kind": "sklearn",
+      "model_path": "/home/fawcett/Desktop/bearing_fault_project/models/rf_model.pkl",
+      "metrics_path": "/home/fawcett/Desktop/bearing_fault_project/outputs/rf_metrics.json",
+      "metrics": {
+        "accuracy": 0.9452887537993921,
+        "precision": 0.9463251756868777,
+        "recall": 0.9452887537993921,
+        "f1": 0.9448797988906763,
+        "inference_ms": 0.8934524468111146
+      },
+      "file_size": 17005561,
+      "sha256": "6be68b3ed5ee15707f4ba7502941a9963234b472e0862fed711720f1bcdbf291",
+      "updated_at_utc": "2026-07-14T06:21:55.682735+00:00",
+      "supported_for_dashboard": true
+    },
+    {
+      "name": "xgb",
+      "kind": "sklearn",
+      "model_path": "/home/fawcett/Desktop/bearing_fault_project/models/xgb_model.pkl",
+      "metrics_path": "/home/fawcett/Desktop/bearing_fault_project/outputs/xgb_metrics.json",
+      "metrics": {
+        "accuracy": 0.9452887537993921,
+        "precision": 0.946323984539496,
+        "recall": 0.9452887537993921,
+        "f1": 0.94510714598781,
+        "inference_ms": 0.16153277507510766
+      },
+      "file_size": 1990321,
+      "sha256": "60162a5c405b767b4a90d7e22293c31821aa5f2f9865a910feaa964a4c5eb28d",
+      "updated_at_utc": "2026-07-14T06:21:55.692821+00:00",
+      "supported_for_dashboard": true
+    },
+    {
+      "name": "transformer",
+      "kind": "torch",
+      "model_path": "/home/fawcett/Desktop/bearing_fault_project/models/fault_transformer_final.pth",
+      "metrics_path": null,
+      "metrics": {},
+      "file_size": 488486,
+      "sha256": "9f379373412bce95497f3f4a4eb98150c6bc95bebc806d8d34a8b837dd5bd04a",
+      "updated_at_utc": "2026-07-14T06:21:55.695383+00:00",
+      "supported_for_dashboard": true
+    },
+    {
+      "name": "maml",
+      "kind": "torch",
+      "model_path": "/home/fawcett/Desktop/bearing_fault_project/models/maml_final_model.pth",
+      "metrics_path": null,
+      "metrics": {},
+      "file_size": 6371973,
+      "sha256": "c185e436f1ce5fe9061b7bfd654f4d1b02352400dc0f6c229690b4c6e28fa87c",
+      "updated_at_utc": "2026-07-14T06:21:55.728345+00:00",
+      "supported_for_dashboard": true
+    },
+    {
+      "name": "meta_sgd",
+      "kind": "torch",
+      "model_path": "/home/fawcett/Desktop/bearing_fault_project/models/meta_sgd_model_improved.pth",
+      "metrics_path": null,
+      "metrics": {},
+      "file_size": 41243653,
+      "sha256": "270658108463d028e1ccdd542c441a9f8e41be872966ee18563042d6b4585797",
+      "updated_at_utc": "2026-07-14T06:21:55.922670+00:00",
+      "supported_for_dashboard": true
+    },
+    {
+      "name": "fbcl",
+      "kind": "torch",
+      "model_path": "/home/fawcett/Desktop/bearing_fault_project/models/fbcl_model.pth",
+      "metrics_path": null,
+      "metrics": {},
+      "file_size": 25066200,
+      "sha256": "0191fee832501bff331526314f767a374b002c77ea32d2c273bcc66b6ab13ac9",
+      "updated_at_utc": "2026-07-14T06:21:56.041682+00:00",
+      "supported_for_dashboard": true
+    }
+  ],
+  "production": {
+    "name": "xgb",
+    "kind": "sklearn",
+    "model_path": "/home/fawcett/Desktop/bearing_fault_project/models/xgb_model.pkl",
+    "metrics_path": "/home/fawcett/Desktop/bearing_fault_project/outputs/xgb_metrics.json",
+    "metrics": {
+      "accuracy": 0.9452887537993921,
+      "precision": 0.946323984539496,
+      "recall": 0.9452887537993921,
+      "f1": 0.94510714598781,
+      "inference_ms": 0.16153277507510766
+    },
+    "file_size": 1990321,
+    "sha256": "60162a5c405b767b4a90d7e22293c31821aa5f2f9865a910feaa964a4c5eb28d",
+    "updated_at_utc": "2026-07-14T06:21:55.692821+00:00",
+    "supported_for_dashboard": true,
+    "production_bundle_path": "/home/fawcett/Desktop/bearing_fault_project/models/production_model.pkl"
+  }
+}
