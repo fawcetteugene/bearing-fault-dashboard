@@ -107,6 +107,33 @@ def _normalize_state_dict(state_dict: dict[str, Any]) -> dict[str, Any]:
     return state_dict
 
 
+def _repo_root() -> str:
+    """Always returns the project root regardless of where the process is launched."""
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _rel(path: str) -> str:
+    """Store paths as repo-relative so they survive deployment to any mount point."""
+    try:
+        return os.path.relpath(path, _repo_root())
+    except ValueError:
+        return path  # different drive on Windows
+
+
+def _abs(path: str) -> str:
+    """Resolve a stored (possibly relative or stale-absolute) path to absolute at runtime."""
+    if not os.path.isabs(path):
+        return os.path.join(_repo_root(), path)
+    # Stale absolute path from a different machine — remap via known repo-relative prefixes
+    for prefix in ("models/", "outputs/", "data/"):
+        idx = path.find("/" + prefix)
+        if idx != -1:
+            candidate = os.path.join(_repo_root(), path[idx + 1:])
+            if os.path.exists(candidate):
+                return candidate
+    return path  # last resort: use as-is
+
+
 def _candidate_from_paths(name: str, model_path: str, metrics_path: str | None) -> ArtifactRecord | None:
     if not os.path.exists(model_path):
         return None
@@ -115,8 +142,8 @@ def _candidate_from_paths(name: str, model_path: str, metrics_path: str | None) 
     return ArtifactRecord(
         name=name,
         kind=_guess_kind(name, model_path),
-        model_path=os.path.abspath(model_path),
-        metrics_path=os.path.abspath(metrics_path) if metrics_path and os.path.exists(metrics_path) else None,
+        model_path=_rel(model_path),
+        metrics_path=_rel(metrics_path) if metrics_path and os.path.exists(metrics_path) else None,
         metrics=metrics,
         file_size=os.path.getsize(model_path),
         sha256=_sha256(model_path),
@@ -173,15 +200,15 @@ def build_artifact_registry(force: bool = False) -> dict[str, Any]:
         "seed": 42,
         "feature_order": ALL_FEATURES,
         "target_classes": CLASS_NAMES,
-        "scaler_path": os.path.abspath(SCALER_PATH) if os.path.exists(SCALER_PATH) else None,
-        "encoder_path": os.path.abspath(ENCODER_PATH) if os.path.exists(ENCODER_PATH) else None,
-        "preprocessing_manifest_path": os.path.abspath(PREPROCESSING_MANIFEST) if os.path.exists(PREPROCESSING_MANIFEST) else None,
+        "scaler_path": _rel(SCALER_PATH) if os.path.exists(SCALER_PATH) else None,
+        "encoder_path": _rel(ENCODER_PATH) if os.path.exists(ENCODER_PATH) else None,
+        "preprocessing_manifest_path": _rel(PREPROCESSING_MANIFEST) if os.path.exists(PREPROCESSING_MANIFEST) else None,
         "candidates": [asdict(c) for c in candidates],
         "production": asdict(production) if production else None,
     }
 
     if production:
-        registry["production"]["production_bundle_path"] = os.path.abspath(_copy_production_model(production))
+        registry["production"]["production_bundle_path"] = _rel(_copy_production_model(production))
     if force or not os.path.exists(ARTIFACT_REGISTRY):
         with open(ARTIFACT_REGISTRY, "w", encoding="utf-8") as f:
             json.dump(registry, f, indent=2)
@@ -291,8 +318,10 @@ def load_artifact_model(model_name: str | None = None):
         raise FileNotFoundError("No matching model artifact found.")
 
     if record["kind"] == "sklearn":
-        return joblib.load(record["model_path"])
+        return joblib.load(_abs(record["model_path"]))
     if record["kind"] == "torch":
+        record = dict(record)
+        record["model_path"] = _abs(record["model_path"])
         return _load_torch_model(record)
     raise ValueError(f"Unsupported artifact kind: {record['kind']}")
 

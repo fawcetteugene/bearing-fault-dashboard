@@ -15,7 +15,7 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from src.artifacts import load_artifact_registry, load_artifact_model
+from src.artifacts import load_artifact_registry, load_artifact_model, _abs
 from src.config import (
     ALL_FEATURES,
     CLASS_NAMES,
@@ -44,8 +44,8 @@ class ProductionPredictor:
 
     def __init__(self, model_name: str | None = None):
         self.registry = load_artifact_registry()
-        self.scaler = joblib.load(SCALER_PATH)
-        self.encoder = joblib.load(ENCODER_PATH)
+        self.scaler = joblib.load(_abs(SCALER_PATH))
+        self.encoder = joblib.load(_abs(ENCODER_PATH))
         self.model = load_artifact_model(model_name)
         self.model_name = model_name or self.registry.get("production", {}).get("name", "production")
         self.class_names = list(self.encoder.classes_) if hasattr(self.encoder, "classes_") else CLASS_NAMES
@@ -64,7 +64,7 @@ class ProductionPredictor:
             if c.get("name") == name:
                 import torch
                 try:
-                    p = torch.load(c["model_path"], map_location="cpu", weights_only=False)
+                    p = torch.load(_abs(c["model_path"]), map_location="cpu", weights_only=False)
                     return int(p.get("n_features", len(ALL_FEATURES)))
                 except Exception:
                     pass
