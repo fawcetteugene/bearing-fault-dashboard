@@ -518,8 +518,39 @@ registry         = get_registry()
 preproc_manifest = load_preprocessing_manifest()
 prod_name        = registry.get("production", {}).get("name", "production")
 prod_metrics     = registry.get("production", {}).get("metrics", {})
-supported_models = [c["name"] for c in registry.get("candidates", []) if c.get("supported_for_dashboard")]
-model_choices    = [prod_name] + sorted(m for m in supported_models if m != prod_name)
+
+# =============================================================================
+# 🔽 REMOVE BASELINE MODELS FROM UI
+# -----------------------------------------------------------------------------
+BASELINE_NAMES = {"rf", "xgb", "gbm", "lgbm", "stack"}   # models to hide
+
+# Filter supported models to exclude baselines
+all_supported = [c["name"] for c in registry.get("candidates", []) if c.get("supported_for_dashboard")]
+supported_models = [m for m in all_supported if m not in BASELINE_NAMES]
+
+# If no non-baseline models, show warning and use fallback (all models)
+if not supported_models:
+    st.warning("No non‑baseline models found. Showing all available models.")
+    supported_models = all_supported
+
+# We no longer include "Production" in the dropdown because it's a baseline (xgb).
+# Instead, we list only non-baseline models, with the first one as default.
+model_choices = sorted(supported_models)   # alphabetical order
+# If there is a non-baseline production (unlikely, but we could set default to that)
+# For now, just take the first in alphabetical order.
+default_index = 0
+# Optionally, if a non-baseline model is marked as production, set it as default.
+prod_non_baseline = None
+if prod_name not in BASELINE_NAMES:
+    prod_non_baseline = prod_name
+    # Move it to top (optional)
+    if prod_non_baseline in model_choices:
+        model_choices.remove(prod_non_baseline)
+        model_choices.insert(0, prod_non_baseline)
+        default_index = 0
+
+# =============================================================================
+
 feature_count    = len(registry.get("feature_order", [])) or len(ORIGINAL_FEATURES)
 
 acc_val = prod_metrics.get("accuracy", prod_metrics.get("best_val_acc"))
@@ -541,13 +572,19 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     st.markdown("**Active Model**")
+    # Now model_choices contains only non-baseline models; no "Production" option
     selected_model = st.selectbox(
         "Active model",
-        options=model_choices if model_choices else [prod_name],
-        index=0,
+        options=model_choices if model_choices else ["No models"],
+        index=default_index if model_choices else 0,
         label_visibility="collapsed",
     )
-    st.caption(f"Production: `{prod_name}`")
+    if model_choices and prod_non_baseline:
+        st.caption(f"Recommended: `{prod_non_baseline}`")
+    elif model_choices:
+        st.caption(f"Available models: {len(model_choices)}")
+    else:
+        st.caption("No models available.")
     st.divider()
 
     st.markdown("**System Health**")
@@ -668,7 +705,8 @@ with tab_predict:
     with right:
         st.markdown('<div class="scard"><div class="scard-title">Diagnosis Result</div>', unsafe_allow_html=True)
         if run_btn:
-            predictor = get_predictor(None if selected_model == prod_name else selected_model)
+            # Always pass selected_model (no None fallback)
+            predictor = get_predictor(selected_model)
             with st.spinner("Running inference…"):
                 result = predictor.predict_row(input_values)
 
@@ -757,7 +795,7 @@ with tab_batch:
             st.dataframe(df_raw.head(10), width="stretch")
 
             if st.button("▶ Run Batch Scoring", type="primary", width="stretch"):
-                predictor = get_predictor(None if selected_model == prod_name else selected_model)
+                predictor = get_predictor(selected_model)   # pass selected model
                 with st.spinner(f"Scoring {len(df_raw)} rows…"):
                     t0 = time.perf_counter()
                     try:
@@ -824,6 +862,8 @@ with tab_batch:
 # ── Tab: Model Comparison ─────────────────────────────────────────────────────
 with tab_compare:
     rows_df = model_rows(registry)
+    # Filter out baseline models from comparison chart and table
+    rows_df = rows_df[~rows_df["Model"].isin(BASELINE_NAMES)]
 
     if not rows_df.empty:
         # Summary bar charts
@@ -833,7 +873,7 @@ with tab_compare:
             plt.close(fig)
 
         st.write("")
-        st.markdown('<div class="scard"><div class="scard-title">All Models</div>', unsafe_allow_html=True)
+        st.markdown('<div class="scard"><div class="scard-title">All Models (Non‑Baseline)</div>', unsafe_allow_html=True)
         st.dataframe(
             rows_df.sort_values("Accuracy", ascending=False, na_position="last")
             .style.format({
@@ -848,25 +888,34 @@ with tab_compare:
         )
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Per-class F1 from production metrics
+        # ── Per-class F1 ──────────────────────────────────────────────────────
         st.write("")
-        st.markdown('<div class="scard"><div class="scard-title">Per-Class F1 — Production Model</div>', unsafe_allow_html=True)
-        pcf1_fig = plot_per_class_f1(prod_metrics)
+        st.markdown('<div class="scard"><div class="scard-title">Per-Class F1 — Best Model</div>', unsafe_allow_html=True)
+
+        pcf1_fig = None
+
+        # 1. If production is non-baseline and has per_class_f1, use it
+        if prod_name not in BASELINE_NAMES and prod_metrics.get("per_class_f1"):
+            pcf1_fig = plot_per_class_f1(prod_metrics)
+        else:
+            # 2. Otherwise, find the best non-baseline model by accuracy (only if at least one valid accuracy exists)
+            acc_series = rows_df["Accuracy"].dropna()
+            if not acc_series.empty:
+                best_idx = acc_series.idxmax()
+                best_non_baseline = rows_df.loc[best_idx]
+                best_name = best_non_baseline["Model"]
+                # Look up the candidate record to get its full metrics
+                for c in registry.get("candidates", []):
+                    if c["name"] == best_name:
+                        pcf1_fig = plot_per_class_f1(c.get("metrics", {}))
+                        break
+
         if pcf1_fig:
             st.pyplot(pcf1_fig, width="stretch")
             plt.close(pcf1_fig)
         else:
-            # Try loading from outputs/rf_metrics.json as fallback
-            rf_path = os.path.join(OUTPUT_DIR, "rf_metrics.json")
-            if os.path.exists(rf_path):
-                with open(rf_path) as f:
-                    rf_m = json.load(f)
-                fig_rf = plot_per_class_f1(rf_m)
-                if fig_rf:
-                    st.pyplot(fig_rf, width="stretch")
-                    plt.close(fig_rf)
-            else:
-                st.info("No per-class F1 data available.")
+            st.info("No per‑class F1 data available for the selected model(s).")
+
         st.markdown('</div>', unsafe_allow_html=True)
 
         # Saved per-class plots from outputs/
@@ -879,7 +928,7 @@ with tab_compare:
                     st.image(os.path.join(OUTPUT_DIR, fname), caption=fname, width="stretch")
             st.markdown('</div>', unsafe_allow_html=True)
     else:
-        st.info("No model metrics available. Train models first.")
+        st.info("No non‑baseline model metrics available. Train deep learning models first.")
 
 # ── Tab: Explain ──────────────────────────────────────────────────────────────
 with tab_explain:
@@ -896,7 +945,7 @@ with tab_explain:
         sample_row = df_raw.iloc[0][ORIGINAL_FEATURES].to_dict()
 
     if st.button("💡 Generate SHAP Explanation", type="primary", width="stretch"):
-        predictor = get_predictor(None if selected_model == prod_name else selected_model)
+        predictor = get_predictor(selected_model)   # pass selected model
         with st.spinner("Computing SHAP values…"):
             fig, msg = plot_local_shap(predictor, sample_row)
         if fig:
